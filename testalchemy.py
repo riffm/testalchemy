@@ -67,7 +67,8 @@ class Restorable(object):
                     db.delete(instance)
         db.commit()
         db.close()
-        event.Events._remove(self.session_maker, 'after_flush', self.after_flush)
+        event.Events._remove(self.session_maker, 'after_flush',
+                             self.after_flush)
 
     def after_flush(self, db, flush_context, instances=None):
         for instance in db.new:
