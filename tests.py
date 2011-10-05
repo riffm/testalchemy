@@ -140,8 +140,11 @@ class Test(unittest.TestCase):
             self.assertEqual(history.last_deleted(User), set())
             self.assertEqual(history.assert_created(User), set([user]))
             self.assertEqual(history.assert_created(User, user.id), user)
+            self.assertEqual(history.assert_created_one(User), user)
             self.assertRaises(AssertionError, history.assert_updated, User)
+            self.assertRaises(AssertionError, history.assert_updated_one, User)
             self.assertRaises(AssertionError, history.assert_deleted, User)
+            self.assertRaises(AssertionError, history.assert_deleted_one, User)
 
     def test_models_history_updated(self):
         session = self.session
@@ -160,9 +163,12 @@ class Test(unittest.TestCase):
             self.assertEqual(history.last_updated(User), set([user]))
             self.assertEqual(history.last_deleted(User), set())
             self.assertRaises(AssertionError, history.assert_created, User)
+            self.assertRaises(AssertionError, history.assert_created_one, User)
             self.assertEqual(history.assert_updated(User), set([user]))
             self.assertEqual(history.assert_updated(User, user.id), user)
+            self.assertEqual(history.assert_updated_one(User), user)
             self.assertRaises(AssertionError, history.assert_deleted, User)
+            self.assertRaises(AssertionError, history.assert_deleted_one, User)
 
     def test_models_history_deleted(self):
         session = self.session
@@ -181,9 +187,12 @@ class Test(unittest.TestCase):
             self.assertEqual(history.last_updated(User), set())
             self.assertEqual(history.last_deleted(User), set([user]))
             self.assertRaises(AssertionError, history.assert_created, User)
+            self.assertRaises(AssertionError, history.assert_created_one, User)
             self.assertRaises(AssertionError, history.assert_updated, User)
+            self.assertRaises(AssertionError, history.assert_updated_one, User)
             self.assertEqual(history.assert_deleted(User), set([user]))
             self.assertEqual(history.assert_deleted(User, user.id), user)
+            self.assertEqual(history.assert_deleted_one(User), user)
 
     def test_sample_properties(self):
         class TestSample(Sample):
