@@ -24,15 +24,14 @@ class sample_property(object):
 
 
 class SampleMeta(type):
-    def __init__(cls, cls_name, bases, namespace):
-        super(SampleMeta, cls).__init__(cls_name, bases, namespace)
-        decorated_methods = {}
+    def __new__(cls, cls_name, bases, namespace):
+        namespace['_decorated_methods'] = decorated_methods = {}
         for attr_name, attr_value in namespace.items():
             if not (attr_name.startswith('_') or attr_name == 'create_all') \
             and isinstance(attr_value, (types.FunctionType, types.LambdaType)):
                 decorated_methods[attr_name] = attr_value
-                setattr(cls, attr_name, sample_property(attr_value))
-        setattr(cls, '_decorated_methods', decorated_methods)
+                namespace[attr_name] = sample_property(attr_value)
+        return type.__new__(cls, cls_name, bases, namespace)
 
 
 class Sample(object):
