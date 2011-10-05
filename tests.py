@@ -2,6 +2,7 @@
 
 import unittest
 from testalchemy import Sample, Restorable, ModelsHistory
+import sqlalchemy.exc
 from sqlalchemy import (
         MetaData, Table, Column, String, Integer, ForeignKey,
         create_engine, UniqueConstraint)
@@ -106,6 +107,22 @@ class Test(unittest.TestCase):
                 session.commit()
                 raise Exception('unwanted')
         self.assertRaises(Exception, exceptional_behavior)
+        self.assertEqual(self.session.query(User).all(), [])
+        self.assertEqual(self.session.query(Category).all(), [])
+        self.assertEqual(self.session.query(Role).all(), [])
+        self.assertEqual(self.session.query(Smi).all(), [])
+
+    def test_restorable_and_dirty_session(self):
+        def dirty_session():
+            with Restorable(self.Session) as session:
+                smi = Smi(name='newspaper')
+                cat1 = Category(name='cat1')
+                cat2 = Category(name='cat2')
+                user = User(name='john')
+                role = Role(user=user, smi=smi, categories=[cat1, cat1])
+                session.add_all([smi, cat1, cat2, user, role])
+                session.commit()
+        self.assertRaises(sqlalchemy.exc.IntegrityError, dirty_session)
         self.assertEqual(self.session.query(User).all(), [])
         self.assertEqual(self.session.query(Category).all(), [])
         self.assertEqual(self.session.query(Role).all(), [])
