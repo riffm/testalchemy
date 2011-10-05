@@ -115,7 +115,7 @@ class Test(unittest.TestCase):
 
     def test_models_history_init(self):
         session = self.session
-        with ModelsHistory(session) as history:
+        with ModelsHistory(self.Session) as history:
             self.assertEqual(history.created, set())
             self.assertEqual(history.updated, set())
             self.assertEqual(history.deleted, set())
@@ -128,7 +128,7 @@ class Test(unittest.TestCase):
 
     def test_models_history_created(self):
         session = self.session
-        with ModelsHistory(session) as history:
+        with ModelsHistory(self.Session) as history:
             user = User(name='test')
             session.add(user)
             session.commit()
@@ -149,7 +149,7 @@ class Test(unittest.TestCase):
         session.add(user)
         session.commit()
         session.expire_all()
-        with ModelsHistory(session) as history:
+        with ModelsHistory(self.Session) as history:
             user = session.query(User).get(user.id)
             user.name = 'test 1'
             session.commit()
@@ -170,7 +170,7 @@ class Test(unittest.TestCase):
         session.add(user)
         session.commit()
         session.expire_all()
-        with ModelsHistory(session) as history:
+        with ModelsHistory(self.Session) as history:
             user = session.query(User).get(user.id)
             session.delete(user)
             session.commit()
