@@ -53,22 +53,6 @@ roles_category = Table('roles_category', metadata,
 )
 
 
-class DataSample(Sample):
-    def john(self):
-        return User(name='john')
-
-    def cat1(self):
-        return Category(name='cat1')
-
-    def cat2(self):
-        return Category(name='cat2')
-
-    def newspaper_editor(self):
-        return Role(user=self.john, smi=self.newspaper,
-                    categories=[self.cat1, self.cat2])
-
-    def newspaper(self):
-        return Smi(name='newspaper')
 
 
 class Test(unittest.TestCase):
@@ -214,6 +198,29 @@ class Test(unittest.TestCase):
         self.assertTrue(hasattr(TestSample, '_decorated_methods'))
         self.assertEqual(TestSample._decorated_methods,
                          {'method': TestSample.method.method})
+
+    def test_sample_creation(self):
+        class DataSample(Sample):
+            def john(self):
+                return User(name='john')
+            def cat1(self):
+                return Category(name='cat1')
+            def cat2(self):
+                return Category(name='cat2')
+            def newspaper_editor(self):
+                return Role(user=self.john, smi=self.newspaper,
+                            categories=[self.cat1, self.cat2])
+            def newspaper(self):
+                return Smi(name='newspaper')
+        sample = DataSample(self.session)
+        sample.create_all()
+        self.assertEqual(self.session.query(User).all(), [sample.john])
+        self.assertEqual(set(self.session.query(Category).all()),
+                         set([sample.cat1, sample.cat2]))
+        self.assertEqual(self.session.query(Role).all(),
+                         [sample.newspaper_editor])
+        self.assertEqual(self.session.query(Smi).all(),
+                         [sample.newspaper])
 
 
 if __name__ == '__main__':
