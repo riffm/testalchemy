@@ -106,9 +106,8 @@ class ModelsHistory(object):
             ident = ident if isinstance(ident, (tuple, list)) else (ident,)
             item = [i for i in dataset \
                     if util.identity_key(instance=i)[1] == ident]
-            assert item,'No insatances of %s with %r were %s' % (model_cls,
-                                                                 ident,
-                                                                 mode)
+            assert item,'No insatances of %s with identity %r were %s' % \
+                   (model_cls, ident, mode)
             return item[0]
         return dataset
 
