@@ -28,7 +28,7 @@ class SampleMeta(type):
         namespace['_decorated_methods'] = decorated_methods = {}
         for attr_name, attr_value in namespace.items():
             if not (attr_name.startswith('_') or attr_name == 'create_all') \
-            and isinstance(attr_value, (types.FunctionType, types.LambdaType)):
+            and isinstance(attr_value, types.FunctionType):
                 decorated_methods[attr_name] = attr_value
                 namespace[attr_name] = sample_property(attr_value)
         return type.__new__(cls, cls_name, bases, namespace)
