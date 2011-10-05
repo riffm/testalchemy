@@ -82,9 +82,12 @@ class Test(unittest.TestCase):
 
     def test_restorable_and_normal_behavior(self):
         with Restorable(self.Session) as session:
-            sample = PressSample(session)
-            sample.create_all()
-            session.delete(sample.cat1)
+            smi = Smi(name='newspaper')
+            cat1 = Category(name='cat1')
+            cat2 = Category(name='cat2')
+            user = User(name='john')
+            role = Role(user=user, smi=smi, categories=[cat1, cat2])
+            session.add_all([smi, cat1, cat2, user, role])
             session.commit()
         self.assertEqual(self.session.query(User).all(), [])
         self.assertEqual(self.session.query(Category).all(), [])
@@ -94,29 +97,32 @@ class Test(unittest.TestCase):
     def test_restorable_and_exceptional_behavior(self):
         def exceptional_behavior():
             with Restorable(self.Session) as session:
-                sample = PressSample(session)
-                sample.create_all()
-                session.delete(sample.john)
-                raise Exception('unwanted')
+                smi = Smi(name='newspaper')
+                cat1 = Category(name='cat1')
+                cat2 = Category(name='cat2')
+                user = User(name='john')
+                role = Role(user=user, smi=smi, categories=[cat1, cat2])
+                session.add_all([smi, cat1, cat2, user, role])
                 session.commit()
+                raise Exception('unwanted')
         self.assertRaises(Exception, exceptional_behavior)
         self.assertEqual(self.session.query(User).all(), [])
         self.assertEqual(self.session.query(Category).all(), [])
         self.assertEqual(self.session.query(Role).all(), [])
         self.assertEqual(self.session.query(Smi).all(), [])
 
-        def test_models_history_init(self):
-            session = self.session
-            with ModelsHistory(session) as history:
-                self.assertEqual(history.created, set())
-                self.assertEqual(history.updated, set())
-                self.assertEqual(history.deleted, set())
-                self.assertEqual(history.last_created(User), set())
-                self.assertEqual(history.last_updated(User), set())
-                self.assertEqual(history.last_deleted(User), set())
-                self.assertRaises(AssertionError, history.assert_created, User)
-                self.assertRaises(AssertionError, history.assert_updated, User)
-                self.assertRaises(AssertionError, history.assert_deleted, User)
+    def test_models_history_init(self):
+        session = self.session
+        with ModelsHistory(session) as history:
+            self.assertEqual(history.created, set())
+            self.assertEqual(history.updated, set())
+            self.assertEqual(history.deleted, set())
+            self.assertEqual(history.last_created(User), set())
+            self.assertEqual(history.last_updated(User), set())
+            self.assertEqual(history.last_deleted(User), set())
+            self.assertRaises(AssertionError, history.assert_created, User)
+            self.assertRaises(AssertionError, history.assert_updated, User)
+            self.assertRaises(AssertionError, history.assert_deleted, User)
 
     def test_models_history_created(self):
         session = self.session
