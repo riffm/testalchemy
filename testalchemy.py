@@ -124,23 +124,25 @@ class ModelsHistory(object):
     def assert_deleted(self, model_cls, ident=None):
         return self.assert_(model_cls, ident, 'deleted')
 
+    def assert_one(self, dataset, model_cls, mode):
+        if len(dataset) != 1:
+            raise AssertionError('%d instance(s) of %s %s, '
+                                 'need only one' % (len(dataset),
+                                                    model_cls,
+                                                    mode))
+        return dataset.pop()
+
     def assert_created_one(self, model_cls):
         result = self.assert_created(model_cls)
-        if len(result) != 1:
-            raise AssertionError('fail')
-        return result.pop()
+        return self.assert_one(result, model_cls, 'created')
 
     def assert_deleted_one(self, model_cls):
         result = self.assert_deleted(model_cls)
-        if len(result) != 1:
-            raise AssertionError('fail')
-        return result.pop()
+        return self.assert_one(result, model_cls, 'deleted')
 
     def assert_updated_one(self, model_cls):
         result = self.assert_updated(model_cls)
-        if len(result) != 1:
-            raise AssertionError('fail')
-        return result.pop()
+        return self.assert_one(result, model_cls, 'updated')
 
     def clear(self):
         self.created = set()
