@@ -27,6 +27,9 @@ class Sample(object):
     class __metaclass__(type):
         def __new__(cls, cls_name, bases, namespace):
             namespace['_decorated_methods'] = decorated_methods = {}
+            for base in bases:
+                if hasattr(base, '_decorated_methods'):
+                    decorated_methods.update(base._decorated_methods)
             for attr_name, attr_value in namespace.items():
                 if not (attr_name.startswith('_') or attr_name=='create_all') \
                 and isinstance(attr_value, types.FunctionType):
