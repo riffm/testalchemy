@@ -81,8 +81,9 @@ class Restorable(object):
 
 class ModelsHistory(object):
 
-    def __init__(self, session_maker):
-        self.session_maker = session_maker
+    def __init__(self, session):
+        # `Session` class or subclass or object
+        self.session = session
         self.created = set()
         self.deleted = set()
         self.updated = set()
@@ -129,12 +130,12 @@ class ModelsHistory(object):
         self.updated = set()
 
     def __enter__(self):
-        event.listen(self.session_maker, 'after_flush', self._after_flush)
+        event.listen(self.session, 'after_flush', self._after_flush)
         return self
 
     def __exit__(self, type, value, traceback):
         self.clear()
-        event.Events._remove(self.session_maker, 'after_flush', 
+        event.Events._remove(self.session, 'after_flush', 
                              self._after_flush)
 
     def _after_flush(self, db, flush_context, instances=None):
