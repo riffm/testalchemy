@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import types
 import unittest
-from testalchemy import Sample, Restorable, ModelsHistory
+from testalchemy import Sample, Restorable, ModelsHistory, sample_property
 import sqlalchemy.exc
 from sqlalchemy import (
         MetaData, Table, Column, String, Integer, ForeignKey,
@@ -52,7 +53,7 @@ roles_category = Table('roles_category', metadata,
 )
 
 
-class PressSample(Sample):
+class DataSample(Sample):
     def john(self):
         return User(name='john')
 
@@ -62,12 +63,12 @@ class PressSample(Sample):
     def cat2(self):
         return Category(name='cat2')
 
-    def kp_editor(self):
-        return Role(user=self.john, smi=self.kp,
+    def newspaper_editor(self):
+        return Role(user=self.john, smi=self.newspaper,
                     categories=[self.cat1, self.cat2])
 
-    def kp(self):
-        return Smi(name='kp')
+    def newspaper(self):
+        return Smi(name='newspaper')
 
 
 class Test(unittest.TestCase):
@@ -199,6 +200,20 @@ class Test(unittest.TestCase):
             self.assertRaises(AssertionError, history.assert_updated, User)
             self.assertEqual(history.assert_deleted(User), set([user]))
             self.assertEqual(history.assert_deleted(User, user.id), user)
+
+    def test_sample_properties(self):
+        class TestSample(Sample):
+            def method(self):
+                pass
+            def _method(self):
+                pass
+        self.assertTrue(hasattr(TestSample, 'method'))
+        self.assertTrue(isinstance(TestSample.method, sample_property))
+        self.assertTrue(hasattr(TestSample, '_method'))
+        self.assertTrue(isinstance(TestSample._method, types.MethodType))
+        self.assertTrue(hasattr(TestSample, '_decorated_methods'))
+        self.assertEqual(TestSample._decorated_methods,
+                         {'method': TestSample.method.method})
 
 
 if __name__ == '__main__':
