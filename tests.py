@@ -199,6 +199,30 @@ class Test(unittest.TestCase):
         self.assertEqual(TestSample._decorated_methods,
                          {'method': TestSample.method.method})
 
+    def test_sample_properties_with_inheritance(self):
+        class BaseTestSample(Sample):
+            def method(self):
+                pass
+            def _method(self):
+                pass
+        class TestSample(BaseTestSample):
+            def method1(self):
+                pass
+            def _method1(self):
+                pass
+        self.assertTrue(hasattr(TestSample, 'method'))
+        self.assertTrue(isinstance(TestSample.method, sample_property))
+        self.assertTrue(hasattr(TestSample, 'method1'))
+        self.assertTrue(isinstance(TestSample.method1, sample_property))
+        self.assertTrue(hasattr(TestSample, '_method'))
+        self.assertTrue(isinstance(TestSample._method, types.MethodType))
+        self.assertTrue(hasattr(TestSample, '_method1'))
+        self.assertTrue(isinstance(TestSample._method1, types.MethodType))
+        self.assertTrue(hasattr(TestSample, '_decorated_methods'))
+        self.assertEqual(TestSample._decorated_methods,
+                         {'method': TestSample.method.method,
+                          'method1': TestSample.method1.method})
+
     def test_sample_creation(self):
         class DataSample(Sample):
             def john(self):
