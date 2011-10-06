@@ -52,7 +52,7 @@ roles_category = Table('roles_category', metadata,
     UniqueConstraint('role_id', 'category_id')
 )
 
-
+EMPTY = object()
 
 
 class Test(unittest.TestCase):
@@ -65,6 +65,17 @@ class Test(unittest.TestCase):
 
     def tearDown(self):
         self.session.close()
+
+    def assert_attr(self, obj, attr_name, type_of=None, value=EMPTY):
+        self.assertTrue(hasattr(obj, attr_name),
+                        '%r has no attribute %s' % (obj, attr_name))
+        attr = getattr(obj, attr_name)
+        if type_of is not None:
+            self.assertTrue(isinstance(attr, type_of),
+                             'Attribute %r is not %r type' % (attr, type_of))
+        if value is not EMPTY:
+            self.assertEqual(attr, value)
+
 
     def test_restorable_and_normal_behavior(self):
         with Restorable(self.Session) as session:
@@ -200,13 +211,10 @@ class Test(unittest.TestCase):
                 pass
             def _method(self):
                 pass
-        self.assertTrue(hasattr(TestSample, 'method'))
-        self.assertTrue(isinstance(TestSample.method, sample_property))
-        self.assertTrue(hasattr(TestSample, '_method'))
-        self.assertTrue(isinstance(TestSample._method, types.MethodType))
-        self.assertTrue(hasattr(TestSample, '_decorated_methods'))
-        self.assertEqual(TestSample._decorated_methods,
-                         {'method': TestSample.method.method})
+        self.assert_attr(TestSample, 'method', sample_property)
+        self.assert_attr(TestSample, '_method', types.MethodType)
+        self.assert_attr(TestSample, '_decorated_methods',
+                         value={'method': TestSample.method.method})
 
     def test_sample_properties_with_inheritance(self):
         class BaseTestSample(Sample):
@@ -219,18 +227,13 @@ class Test(unittest.TestCase):
                 pass
             def _method1(self):
                 pass
-        self.assertTrue(hasattr(TestSample, 'method'))
-        self.assertTrue(isinstance(TestSample.method, sample_property))
-        self.assertTrue(hasattr(TestSample, 'method1'))
-        self.assertTrue(isinstance(TestSample.method1, sample_property))
-        self.assertTrue(hasattr(TestSample, '_method'))
-        self.assertTrue(isinstance(TestSample._method, types.MethodType))
-        self.assertTrue(hasattr(TestSample, '_method1'))
-        self.assertTrue(isinstance(TestSample._method1, types.MethodType))
-        self.assertTrue(hasattr(TestSample, '_decorated_methods'))
-        self.assertEqual(TestSample._decorated_methods,
-                         {'method': TestSample.method.method,
-                          'method1': TestSample.method1.method})
+        self.assert_attr(TestSample, 'method', sample_property)
+        self.assert_attr(TestSample, 'method1', sample_property)
+        self.assert_attr(TestSample, '_method', types.MethodType)
+        self.assert_attr(TestSample, '_method1', types.MethodType)
+        self.assert_attr(TestSample, '_decorated_methods',
+                         value={'method': TestSample.method.method,
+                                'method1': TestSample.method1.method})
 
     def test_sample_creation(self):
         class DataSample(Sample):
@@ -254,6 +257,31 @@ class Test(unittest.TestCase):
                          [sample.newspaper_editor])
         self.assertEqual(self.session.query(Smi).all(),
                          [sample.newspaper])
+
+    def test_sample_with_mixin(self):
+        class BaseSample(Sample):
+            def method(self):
+                pass
+            def _method(self):
+                pass
+        class BaseSample1(Sample):
+            def method1(self):
+                pass
+            def _method1(self):
+                pass
+        class TestSample(BaseSample, BaseSample1):
+            def method2(self):
+                pass
+            def _method2(self):
+                pass
+        self.assert_attr(TestSample, 'method', sample_property)
+        self.assert_attr(TestSample, 'method1', sample_property)
+        self.assert_attr(TestSample, '_method', types.MethodType)
+        self.assert_attr(TestSample, '_method1', types.MethodType)
+        self.assert_attr(TestSample, '_decorated_methods',
+                         value={'method': TestSample.method.method,
+                                'method1': TestSample.method1.method,
+                                'method2': TestSample.method2.method})
 
 
 if __name__ == '__main__':
