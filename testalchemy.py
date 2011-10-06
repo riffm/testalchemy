@@ -37,9 +37,10 @@ class Sample(object):
                     namespace[attr_name] = sample_property(attr_value)
             return type.__new__(cls, cls_name, bases, namespace)
 
-    def __init__(self, db):
+    def __init__(self, db, **kwargs):
         self.db = db
         self.used_properties = set()
+        self.__dict__.update(kwargs)
 
     def create_all(self):
         for attr_name, attr_value in self.__class__.__dict__.items():
