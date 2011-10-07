@@ -4,7 +4,7 @@ import types
 from sqlalchemy import event
 from sqlalchemy.orm import util
 
-__all__ = ['Sample', 'Restorable', 'ModelsHistory']
+__all__ = ['Sample', 'Restorable', 'DBHistory']
 
 
 class sample_property(object):
@@ -80,7 +80,7 @@ class Restorable(object):
             self.history.setdefault(cls, set()).add(ident)
 
 
-class ModelsHistory(object):
+class DBHistory(object):
 
     def __init__(self, session):
         # `Session` class or subclass or object
