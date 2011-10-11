@@ -50,19 +50,19 @@ class Sample(object):
 
 
 class Restorable(object):
-    def __init__(self, session_maker):
-        self.session_maker = session_maker
+    def __init__(self, db, event_target=None):
+        self.db = db
+        self.event_target = event_target or db
         self.history = {}
-        self.db = None
 
     def __enter__(self):
-        event.listen(self.session_maker, 'after_flush', self.after_flush)
-        self.db = self.session_maker()
-        return self.db
+        event.listen(self.event_target, 'after_flush', self.after_flush)
 
     def __exit__(self, type, value, traceback):
-        self.db.close()
-        db = self.session_maker()
+        db = self.db
+        db.rollback()
+        db.expunge_all()
+        old_autoflush = db.autoflush
         db.autoflush = False
         for cls, ident_set in self.history.items():
             for ident in ident_set:
@@ -71,7 +71,8 @@ class Restorable(object):
                     db.delete(instance)
         db.commit()
         db.close()
-        event.Events._remove(self.session_maker, 'after_flush',
+        db.autoflush = old_autoflush
+        event.Events._remove(self.event_target, 'after_flush',
                              self.after_flush)
 
     def after_flush(self, db, flush_context, instances=None):

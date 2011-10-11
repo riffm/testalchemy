@@ -60,7 +60,7 @@ class Test(unittest.TestCase):
     def setUp(self):
         engine = create_engine('sqlite:///:memory:', echo=False)
         metadata.create_all(engine)
-        self.Session = sessionmaker(bind=engine, autoflush=False)
+        self.Session = sessionmaker(bind=engine)
         self.session = self.Session()
 
     def tearDown(self):
@@ -77,7 +77,8 @@ class Test(unittest.TestCase):
             self.assertEqual(attr, value)
 
     def test_restorable_and_normal_behavior(self):
-        with Restorable(self.Session) as session:
+        session = self.session
+        with Restorable(session):
             smi = Smi(name='newspaper')
             cat1 = Category(name='cat1')
             cat2 = Category(name='cat2')
@@ -91,8 +92,9 @@ class Test(unittest.TestCase):
         self.assertEqual(self.session.query(Smi).all(), [])
 
     def test_restorable_and_exceptional_behavior(self):
+        session = self.session
         def exceptional_behavior():
-            with Restorable(self.Session) as session:
+            with Restorable(session):
                 smi = Smi(name='newspaper')
                 cat1 = Category(name='cat1')
                 cat2 = Category(name='cat2')
@@ -102,14 +104,15 @@ class Test(unittest.TestCase):
                 session.commit()
                 raise Exception('unwanted')
         self.assertRaises(Exception, exceptional_behavior)
-        self.assertEqual(self.session.query(User).all(), [])
-        self.assertEqual(self.session.query(Category).all(), [])
-        self.assertEqual(self.session.query(Role).all(), [])
-        self.assertEqual(self.session.query(Smi).all(), [])
+        self.assertEqual(session.query(User).all(), [])
+        self.assertEqual(session.query(Category).all(), [])
+        self.assertEqual(session.query(Role).all(), [])
+        self.assertEqual(session.query(Smi).all(), [])
 
     def test_restorable_and_dirty_session(self):
+        session = self.session
         def dirty_session():
-            with Restorable(self.Session) as session:
+            with Restorable(session):
                 smi = Smi(name='newspaper')
                 cat1 = Category(name='cat1')
                 cat2 = Category(name='cat2')
@@ -118,10 +121,10 @@ class Test(unittest.TestCase):
                 session.add_all([smi, cat1, cat2, user, role])
                 session.commit()
         self.assertRaises(sqlalchemy.exc.IntegrityError, dirty_session)
-        self.assertEqual(self.session.query(User).all(), [])
-        self.assertEqual(self.session.query(Category).all(), [])
-        self.assertEqual(self.session.query(Role).all(), [])
-        self.assertEqual(self.session.query(Smi).all(), [])
+        self.assertEqual(session.query(User).all(), [])
+        self.assertEqual(session.query(Category).all(), [])
+        self.assertEqual(session.query(Role).all(), [])
+        self.assertEqual(session.query(Smi).all(), [])
 
     def test_models_history_init(self):
         with DBHistory(self.session) as history:
