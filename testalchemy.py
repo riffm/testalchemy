@@ -2,7 +2,7 @@
 
 import types
 from sqlalchemy import event
-from sqlalchemy.orm import util
+from sqlalchemy.orm import util, Session
 
 __all__ = ['Sample', 'Restorable', 'DBHistory']
 
@@ -92,10 +92,20 @@ class DBHistory(object):
         self.updated_idents = {}
         self.deleted_idents = {}
 
+    @property
+    def db(self):
+        if isinstance(self.session, Session):
+            return self.session
+        return self.session()
+
     def last(self, model_cls, mode):
         assert mode in ('created', 'updated', 'deleted')
-        dataset = getattr(self, mode)
-        return set([item for item in dataset if isinstance(item, model_cls)])
+        if mode == 'deleted':
+            # Because there is not data in DB we return detached object set.
+            return set([inst for inst in self.deleted \
+                        if isinstance(inst, model_cls)])
+        idents = getattr(self, '%s_idents' % mode).get(model_cls, set())
+        return set([self.db.query(model_cls).get(ident) for ident in idents])
 
     def last_created(self, model_cls):
         return self.last(model_cls, 'created')

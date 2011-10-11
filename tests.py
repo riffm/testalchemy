@@ -76,7 +76,6 @@ class Test(unittest.TestCase):
         if value is not EMPTY:
             self.assertEqual(attr, value)
 
-
     def test_restorable_and_normal_behavior(self):
         with Restorable(self.Session) as session:
             smi = Smi(name='newspaper')
@@ -152,12 +151,20 @@ class Test(unittest.TestCase):
             self.assertEqual(history.created_idents, {User: set([(1,)])})
             self.assertEqual(history.updated_idents, {})
             self.assertEqual(history.deleted_idents, {})
-            self.assertEqual(history.last_created(User), set([user]))
+            self.assertEqual(len(history.last_created(User)), 1)
+            self.assertEqual(history.last_created(User).pop().__class__, User)
+            self.assertEqual(history.last_created(User).pop().id, user.id)
             self.assertEqual(history.last_updated(User), set())
             self.assertEqual(history.last_deleted(User), set())
-            self.assertEqual(history.assert_created(User), set([user]))
-            self.assertEqual(history.assert_created(User, user.id), user)
-            self.assertEqual(history.assert_created_one(User), user)
+            self.assertEqual(len(history.assert_created(User)), 1)
+            self.assertEqual(history.assert_created(User).pop().__class__,
+                             User)
+            self.assertEqual(history.assert_created(User).pop().id, user.id)
+            self.assertEqual(history.assert_created(User, user.id).__class__,
+                             User)
+            self.assertEqual(history.assert_created(User, user.id).id, user.id)
+            self.assertEqual(history.assert_created_one(User).__class__, User)
+            self.assertEqual(history.assert_created_one(User).id, user.id)
             self.assertRaises(AssertionError, history.assert_updated, User)
             self.assertRaises(AssertionError, history.assert_updated_one, User)
             self.assertRaises(AssertionError, history.assert_deleted, User)
@@ -180,13 +187,21 @@ class Test(unittest.TestCase):
             self.assertEqual(history.updated_idents, {User: set([(1,)])})
             self.assertEqual(history.deleted_idents, {})
             self.assertEqual(history.last_created(User), set())
-            self.assertEqual(history.last_updated(User), set([user]))
+            self.assertEqual(len(history.last_updated(User)), 1)
+            self.assertEqual(history.last_updated(User).pop().__class__, User)
+            self.assertEqual(history.last_updated(User).pop().id, user.id)
             self.assertEqual(history.last_deleted(User), set())
             self.assertRaises(AssertionError, history.assert_created, User)
             self.assertRaises(AssertionError, history.assert_created_one, User)
-            self.assertEqual(history.assert_updated(User), set([user]))
-            self.assertEqual(history.assert_updated(User, user.id), user)
-            self.assertEqual(history.assert_updated_one(User), user)
+            self.assertEqual(len(history.assert_updated(User)), 1)
+            self.assertEqual(history.assert_updated(User).pop().__class__,
+                             User)
+            self.assertEqual(history.assert_updated(User).pop().id, user.id)
+            self.assertEqual(history.assert_updated(User, user.id).__class__,
+                             User)
+            self.assertEqual(history.assert_updated(User, user.id).id, user.id)
+            self.assertEqual(history.assert_updated_one(User).__class__, User)
+            self.assertEqual(history.assert_updated_one(User).id, user.id)
             self.assertRaises(AssertionError, history.assert_deleted, User)
             self.assertRaises(AssertionError, history.assert_deleted_one, User)
 
