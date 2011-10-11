@@ -88,6 +88,9 @@ class DBHistory(object):
         self.created = set()
         self.deleted = set()
         self.updated = set()
+        self.created_idents = {}
+        self.updated_idents = {}
+        self.deleted_idents = {}
 
     def last(self, model_cls, mode):
         assert mode in ('created', 'updated', 'deleted')
@@ -149,6 +152,9 @@ class DBHistory(object):
         self.created = set()
         self.deleted = set()
         self.updated = set()
+        self.created_idents = {}
+        self.updated_idents = {}
+        self.deleted_idents = {}
 
     def __enter__(self):
         event.listen(self.session, 'after_flush', self._after_flush)
@@ -159,9 +165,17 @@ class DBHistory(object):
         event.Events._remove(self.session, 'after_flush', 
                              self._after_flush)
 
+    def _populate_idents_dict(self, idents, objects):
+        for obj in objects:
+            ident = util.identity_key(instance=obj)
+            idents.setdefault(ident[0], set()).add(ident[1])
+
     def _after_flush(self, db, flush_context, instances=None):
         def identityset_to_set(obj):
             return set(obj._members.values())
         self.created = self.created.union(identityset_to_set(db.new))
         self.updated = self.updated.union(identityset_to_set(db.dirty))
         self.deleted = self.deleted.union(identityset_to_set(db.deleted))
+        self._populate_idents_dict(self.created_idents, self.created)
+        self._populate_idents_dict(self.updated_idents, self.updated)
+        self._populate_idents_dict(self.deleted_idents, self.deleted)
