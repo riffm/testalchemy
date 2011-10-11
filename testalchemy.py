@@ -118,7 +118,7 @@ class DBHistory(object):
 
     def assert_(self, model_cls, ident=None, mode='created'):
         dataset = self.last(model_cls, mode)
-        error_msg = 'No insatances of %s were %s' % (model_cls, mode)
+        error_msg = 'No instances of %s were %s' % (model_cls, mode)
         assert dataset, error_msg
         if ident is not None:
             ident = ident if isinstance(ident, (tuple, list)) else (ident,)
