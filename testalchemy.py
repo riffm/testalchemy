@@ -83,7 +83,7 @@ class Restorable(object):
 class DBHistory(object):
 
     def __init__(self, session):
-        # `Session` class or subclass or object
+        assert isinstance(session, Session)
         self.session = session
         self.created = set()
         self.deleted = set()
@@ -92,12 +92,6 @@ class DBHistory(object):
         self.updated_idents = {}
         self.deleted_idents = {}
 
-    @property
-    def db(self):
-        if isinstance(self.session, Session):
-            return self.session
-        return self.session()
-
     def last(self, model_cls, mode):
         assert mode in ('created', 'updated', 'deleted')
         if mode == 'deleted':
@@ -105,7 +99,8 @@ class DBHistory(object):
             return set([inst for inst in self.deleted \
                         if isinstance(inst, model_cls)])
         idents = getattr(self, '%s_idents' % mode).get(model_cls, set())
-        return set([self.db.query(model_cls).get(ident) for ident in idents])
+        return set([self.session.query(model_cls).get(ident) \
+                    for ident in idents])
 
     def last_created(self, model_cls):
         return self.last(model_cls, 'created')
@@ -167,12 +162,12 @@ class DBHistory(object):
         self.deleted_idents = {}
 
     def __enter__(self):
-        event.listen(self.session, 'after_flush', self._after_flush)
+        event.listen(self.session.__class__, 'after_flush', self._after_flush)
         return self
 
     def __exit__(self, type, value, traceback):
         self.clear()
-        event.Events._remove(self.session, 'after_flush', 
+        event.Events._remove(self.session.__class__, 'after_flush',
                              self._after_flush)
 
     def _populate_idents_dict(self, idents, objects):

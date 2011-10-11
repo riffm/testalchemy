@@ -124,8 +124,7 @@ class Test(unittest.TestCase):
         self.assertEqual(self.session.query(Smi).all(), [])
 
     def test_models_history_init(self):
-        session = self.session
-        with DBHistory(self.Session) as history:
+        with DBHistory(self.session) as history:
             self.assertEqual(history.created, set())
             self.assertEqual(history.updated, set())
             self.assertEqual(history.deleted, set())
@@ -141,7 +140,7 @@ class Test(unittest.TestCase):
 
     def test_models_history_created(self):
         session = self.session
-        with DBHistory(self.Session) as history:
+        with DBHistory(session) as history:
             user = User(name='test')
             session.add(user)
             session.commit()
@@ -151,20 +150,12 @@ class Test(unittest.TestCase):
             self.assertEqual(history.created_idents, {User: set([(1,)])})
             self.assertEqual(history.updated_idents, {})
             self.assertEqual(history.deleted_idents, {})
-            self.assertEqual(len(history.last_created(User)), 1)
-            self.assertEqual(history.last_created(User).pop().__class__, User)
-            self.assertEqual(history.last_created(User).pop().id, user.id)
+            self.assertEqual(history.last_created(User), set([user]))
             self.assertEqual(history.last_updated(User), set())
             self.assertEqual(history.last_deleted(User), set())
-            self.assertEqual(len(history.assert_created(User)), 1)
-            self.assertEqual(history.assert_created(User).pop().__class__,
-                             User)
-            self.assertEqual(history.assert_created(User).pop().id, user.id)
-            self.assertEqual(history.assert_created(User, user.id).__class__,
-                             User)
-            self.assertEqual(history.assert_created(User, user.id).id, user.id)
-            self.assertEqual(history.assert_created_one(User).__class__, User)
-            self.assertEqual(history.assert_created_one(User).id, user.id)
+            self.assertEqual(history.assert_created(User), set([user]))
+            self.assertEqual(history.assert_created(User, user.id), user)
+            self.assertEqual(history.assert_created_one(User), user)
             self.assertRaises(AssertionError, history.assert_updated, User)
             self.assertRaises(AssertionError, history.assert_updated_one, User)
             self.assertRaises(AssertionError, history.assert_deleted, User)
@@ -176,7 +167,7 @@ class Test(unittest.TestCase):
         session.add(user)
         session.commit()
         session.expire_all()
-        with DBHistory(self.Session) as history:
+        with DBHistory(session) as history:
             user = session.query(User).get(user.id)
             user.name = 'test 1'
             session.commit()
@@ -187,21 +178,13 @@ class Test(unittest.TestCase):
             self.assertEqual(history.updated_idents, {User: set([(1,)])})
             self.assertEqual(history.deleted_idents, {})
             self.assertEqual(history.last_created(User), set())
-            self.assertEqual(len(history.last_updated(User)), 1)
-            self.assertEqual(history.last_updated(User).pop().__class__, User)
-            self.assertEqual(history.last_updated(User).pop().id, user.id)
+            self.assertEqual(history.last_updated(User), set([user]))
             self.assertEqual(history.last_deleted(User), set())
             self.assertRaises(AssertionError, history.assert_created, User)
             self.assertRaises(AssertionError, history.assert_created_one, User)
-            self.assertEqual(len(history.assert_updated(User)), 1)
-            self.assertEqual(history.assert_updated(User).pop().__class__,
-                             User)
-            self.assertEqual(history.assert_updated(User).pop().id, user.id)
-            self.assertEqual(history.assert_updated(User, user.id).__class__,
-                             User)
-            self.assertEqual(history.assert_updated(User, user.id).id, user.id)
-            self.assertEqual(history.assert_updated_one(User).__class__, User)
-            self.assertEqual(history.assert_updated_one(User).id, user.id)
+            self.assertEqual(history.assert_updated(User), set([user]))
+            self.assertEqual(history.assert_updated(User, user.id), user)
+            self.assertEqual(history.assert_updated_one(User), user)
             self.assertRaises(AssertionError, history.assert_deleted, User)
             self.assertRaises(AssertionError, history.assert_deleted_one, User)
 
@@ -211,7 +194,7 @@ class Test(unittest.TestCase):
         session.add(user)
         session.commit()
         session.expire_all()
-        with DBHistory(self.Session) as history:
+        with DBHistory(session) as history:
             user = session.query(User).get(user.id)
             session.delete(user)
             session.commit()
