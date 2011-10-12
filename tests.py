@@ -314,8 +314,37 @@ class Test(unittest.TestCase):
                 pass
         self.assert_attr(TestSample, 'method', sample_property)
         self.assert_attr(TestSample, 'method1', sample_property)
+        self.assert_attr(TestSample, 'method2', sample_property)
         self.assert_attr(TestSample, '_method', types.MethodType)
         self.assert_attr(TestSample, '_method1', types.MethodType)
+        self.assert_attr(TestSample, '_method2', types.MethodType)
+        self.assert_attr(TestSample, '_decorated_methods',
+                         value={'method': TestSample.method.method,
+                                'method1': TestSample.method1.method,
+                                'method2': TestSample.method2.method})
+
+    def test_sample_with_oldstyle_mixin(self):
+        class Mixin1(object):
+            def method(self):
+                pass
+            def _method(self):
+                pass
+        class Mixin2:
+            def method1(self):
+                pass
+            def _method1(self):
+                pass
+        class TestSample(Sample, Mixin1, Mixin2):
+            def method2(self):
+                pass
+            def _method2(self):
+                pass
+        self.assert_attr(TestSample, 'method', sample_property)
+        self.assert_attr(TestSample, 'method1', sample_property)
+        self.assert_attr(TestSample, 'method2', sample_property)
+        self.assert_attr(TestSample, '_method', types.MethodType)
+        self.assert_attr(TestSample, '_method1', types.MethodType)
+        self.assert_attr(TestSample, '_method2', types.MethodType)
         self.assert_attr(TestSample, '_decorated_methods',
                          value={'method': TestSample.method.method,
                                 'method1': TestSample.method1.method,

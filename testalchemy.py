@@ -26,6 +26,8 @@ class sample_property(object):
 class Sample(object):
     class __metaclass__(type):
         def __new__(cls, cls_name, bases, attributes):
+            #XXX: check attributes for instances of `sample_property`
+            #     and make a copy
             attributes['_decorated_methods'] = decorated_methods = {}
             attrs_list = [attributes]
             for base in bases:
