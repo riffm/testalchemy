@@ -8,26 +8,24 @@ __all__ = ['Sample', 'Restorable', 'DBHistory']
 
 
 class sample_property(object):
-    def __init__(self, method):
+    def __init__(self, method, name=None):
         self.method = method
         self.__doc__ = method.__doc__
+        self.name = name or method.__name__
 
     def __get__(self, inst, cls):
         if inst is None:
             return self
         result = self.method(inst)
         inst.db.add(result)
-        method_name = self.method.__name__
-        inst.used_properties.add(method_name)
-        setattr(inst, method_name, result)
+        inst.used_properties.add(self.name)
+        setattr(inst, self.name, result)
         return result
 
 
 class Sample(object):
     class __metaclass__(type):
         def __new__(cls, cls_name, bases, attributes):
-            #XXX: check attributes for instances of `sample_property`
-            #     and make a copy
             attributes['_decorated_methods'] = decorated_methods = {}
             attrs_list = [attributes]
             for base in bases:
@@ -37,10 +35,16 @@ class Sample(object):
                     attrs_list.insert(0, base.__dict__)
             for attrs in attrs_list:
                 for attr_name, attr_value in attrs.items():
-                    if not (attr_name.startswith('_') or attr_name=='create_all') \
-                    and isinstance(attr_value, types.FunctionType):
+                    if attr_name.startswith('_') or attr_name=='create_all':
+                        continue
+                    if isinstance(attr_value, types.FunctionType):
                         decorated_methods[attr_name] = attr_value
                         attributes[attr_name] = sample_property(attr_value)
+                    elif isinstance(attr_value, sample_property):
+                        new_value = sample_property(attr_value.method,
+                                                    name=attr_name)
+                        decorated_methods[attr_name] = attr_value.method
+                        attributes[attr_name] = new_value
             return type.__new__(cls, cls_name, bases, attributes)
 
     def __init__(self, db, **kwargs):

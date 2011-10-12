@@ -350,6 +350,32 @@ class Test(unittest.TestCase):
                                 'method1': TestSample.method1.method,
                                 'method2': TestSample.method2.method})
 
+    def test_class_attr_assigning(self):
+        class LibSample(Sample):
+            def method(self):
+                pass
+        class TestSample(Sample):
+            method = LibSample.method
+        self.assert_attr(LibSample, 'method', sample_property)
+        self.assert_attr(LibSample, '_decorated_methods',
+                         value={'method': LibSample.method.method})
+        self.assert_attr(TestSample, 'method', sample_property)
+        self.assert_attr(TestSample, '_decorated_methods',
+                         value={'method': TestSample.method.method})
+
+    def test_assigning_class_attr_with_new_name(self):
+        class LibSample(Sample):
+            def method2(self):
+                pass
+        class TestSample(Sample):
+            method = LibSample.method2
+        self.assert_attr(LibSample, 'method2', sample_property)
+        self.assert_attr(LibSample, '_decorated_methods',
+                         value={'method2': LibSample.method2.method})
+        self.assert_attr(TestSample, 'method', sample_property)
+        self.assert_attr(TestSample, '_decorated_methods',
+                         value={'method': TestSample.method.method})
+
 
 if __name__ == '__main__':
     unittest.main()
