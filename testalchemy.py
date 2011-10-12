@@ -53,9 +53,8 @@ class Sample(object):
         self.__dict__.update(kwargs)
 
     def create_all(self):
-        for attr_name, attr_value in self.__class__.__dict__.items():
-            if isinstance(attr_value, sample_property):
-                getattr(self, attr_name)
+        for attr_name in self._decorated_methods.keys():
+            getattr(self, attr_name)
         self.db.commit()
 
 

@@ -277,6 +277,8 @@ class Test(unittest.TestCase):
                 return Category(name='cat1')
             def cat2(self):
                 return Category(name='cat2')
+            def cat3(self):
+                return Category(name='cat3')
         class Mixin(object):
             def john(self):
                 return User(name='john')
@@ -290,7 +292,7 @@ class Test(unittest.TestCase):
         sample.create_all()
         self.assertEqual(self.session.query(User).all(), [sample.john])
         self.assertEqual(set(self.session.query(Category).all()),
-                         set([sample.cat1, sample.cat2]))
+                         set([sample.cat1, sample.cat2, sample.cat3]))
         self.assertEqual(self.session.query(Role).all(),
                          [sample.newspaper_editor])
         self.assertEqual(self.session.query(Smi).all(),
