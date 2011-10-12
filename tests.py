@@ -368,6 +368,24 @@ class Test(unittest.TestCase):
                          'overrided category')
         self.assertEqual(self.session.query(Category).count(), 1)
 
+    def test_sample_method_overriding_with_call_to_base(self):
+        class BaseTestSample(Sample):
+            def category(self):
+                return Category(name='category')
+        class TestSample(BaseTestSample):
+            def category(self):
+                c = self._decorated_methods['category'](BaseTestSample)
+                c.name = 'overrided category'
+                return c
+        self.assert_attr(TestSample, 'category', sample_property)
+        self.assert_attr(TestSample, '_decorated_methods',
+                         value={'category': TestSample.category.method})
+        sample = TestSample(self.session)
+        sample.create_all()
+        self.assertEqual(self.session.query(Category).get(1).name,
+                         'overrided category')
+        self.assertEqual(self.session.query(Category).count(), 1)
+
     def test_class_attr_assigning(self):
         class LibSample(Sample):
             def method(self):
