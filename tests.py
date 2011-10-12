@@ -271,18 +271,43 @@ class Test(unittest.TestCase):
         self.assertEqual(self.session.query(Smi).all(),
                          [sample.newspaper])
 
+    def test_sample_creation_with_mixins(self):
+        class SampleCat(Sample):
+            def cat1(self):
+                return Category(name='cat1')
+            def cat2(self):
+                return Category(name='cat2')
+        class Mixin(object):
+            def john(self):
+                return User(name='john')
+        class DataSample(SampleCat, Mixin):
+            def newspaper_editor(self):
+                return Role(user=self.john, smi=self.newspaper,
+                            categories=[self.cat1, self.cat2])
+            def newspaper(self):
+                return Smi(name='newspaper')
+        sample = DataSample(self.session)
+        sample.create_all()
+        self.assertEqual(self.session.query(User).all(), [sample.john])
+        self.assertEqual(set(self.session.query(Category).all()),
+                         set([sample.cat1, sample.cat2]))
+        self.assertEqual(self.session.query(Role).all(),
+                         [sample.newspaper_editor])
+        self.assertEqual(self.session.query(Smi).all(),
+                         [sample.newspaper])
+
     def test_sample_with_mixin(self):
-        class BaseSample(Sample):
+        class Mixin1(object):
             def method(self):
                 pass
             def _method(self):
                 pass
-        class BaseSample1(Sample):
+        class Mixin2(object):
             def method1(self):
                 pass
             def _method1(self):
                 pass
-        class TestSample(BaseSample, BaseSample1):
+        class TestSample(Sample, Mixin1, Mixin2):
             def method2(self):
                 pass
             def _method2(self):

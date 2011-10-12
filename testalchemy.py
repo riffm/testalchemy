@@ -25,17 +25,21 @@ class sample_property(object):
 
 class Sample(object):
     class __metaclass__(type):
-        def __new__(cls, cls_name, bases, namespace):
-            namespace['_decorated_methods'] = decorated_methods = {}
+        def __new__(cls, cls_name, bases, attributes):
+            attributes['_decorated_methods'] = decorated_methods = {}
+            attrs_list = [attributes]
             for base in bases:
                 if hasattr(base, '_decorated_methods'):
                     decorated_methods.update(base._decorated_methods)
-            for attr_name, attr_value in namespace.items():
-                if not (attr_name.startswith('_') or attr_name=='create_all') \
-                and isinstance(attr_value, types.FunctionType):
-                    decorated_methods[attr_name] = attr_value
-                    namespace[attr_name] = sample_property(attr_value)
-            return type.__new__(cls, cls_name, bases, namespace)
+                else:
+                    attrs_list.insert(0, base.__dict__)
+            for attrs in attrs_list:
+                for attr_name, attr_value in attrs.items():
+                    if not (attr_name.startswith('_') or attr_name=='create_all') \
+                    and isinstance(attr_value, types.FunctionType):
+                        decorated_methods[attr_name] = attr_value
+                        attributes[attr_name] = sample_property(attr_value)
+            return type.__new__(cls, cls_name, bases, attributes)
 
     def __init__(self, db, **kwargs):
         self.db = db
