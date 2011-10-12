@@ -173,7 +173,6 @@ class DBHistory(object):
         return self
 
     def __exit__(self, type, value, traceback):
-        self.clear()
         event.Events._remove(self.session.__class__, 'after_flush',
                              self._after_flush)
 
