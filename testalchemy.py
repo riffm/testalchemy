@@ -62,13 +62,13 @@ class Sample(object):
 
 
 class Restorable(object):
-    def __init__(self, db, event_target=None):
+    def __init__(self, db, watch=None):
         self.db = db
-        self.event_target = event_target or db
+        self.watch = watch or db
         self.history = {}
 
     def __enter__(self):
-        event.listen(self.event_target, 'after_flush', self.after_flush)
+        event.listen(self.watch, 'after_flush', self.after_flush)
 
     def __exit__(self, type, value, traceback):
         db = self.db
@@ -84,7 +84,7 @@ class Restorable(object):
         db.commit()
         db.close()
         db.autoflush = old_autoflush
-        event.Events._remove(self.event_target, 'after_flush',
+        event.Events._remove(self.watch, 'after_flush',
                              self.after_flush)
 
     def after_flush(self, db, flush_context, instances=None):
