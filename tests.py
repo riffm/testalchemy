@@ -376,9 +376,9 @@ class Test(unittest.TestCase):
                 return Category(name='category')
         class TestSample(BaseTestSample):
             def category(self):
-                c = BaseTestSample.category.method(self)
-                c.name = 'overrided category'
-                return c
+                category = BaseTestSample.category(self)
+                category.name = 'overrided category'
+                return category
         self.assert_attr(BaseTestSample, 'category', sample_property)
         self.assert_attr(BaseTestSample, '_decorated_methods',
                          value={'category': BaseTestSample.category.method})

@@ -22,6 +22,9 @@ class sample_property(object):
         setattr(inst, self.name, result)
         return result
 
+    def __call__(self, obj):
+        return self.method(obj)
+
 
 class Sample(object):
     class __metaclass__(type):
