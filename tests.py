@@ -314,6 +314,8 @@ class Test(unittest.TestCase):
                 pass
             def _method2(self):
                 pass
+        self.assert_attr(Mixin1, 'method', types.MethodType)
+        self.assert_attr(Mixin2, 'method1', types.MethodType)
         self.assert_attr(TestSample, 'method', sample_property)
         self.assert_attr(TestSample, 'method1', sample_property)
         self.assert_attr(TestSample, 'method2', sample_property)
@@ -374,9 +376,12 @@ class Test(unittest.TestCase):
                 return Category(name='category')
         class TestSample(BaseTestSample):
             def category(self):
-                c = self._decorated_methods['category'](BaseTestSample)
+                c = BaseTestSample.category.method(self)
                 c.name = 'overrided category'
                 return c
+        self.assert_attr(BaseTestSample, 'category', sample_property)
+        self.assert_attr(BaseTestSample, '_decorated_methods',
+                         value={'category': BaseTestSample.category.method})
         self.assert_attr(TestSample, 'category', sample_property)
         self.assert_attr(TestSample, '_decorated_methods',
                          value={'category': TestSample.category.method})
