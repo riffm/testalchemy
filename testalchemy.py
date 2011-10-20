@@ -17,7 +17,10 @@ class sample_property(object):
         if inst is None:
             return self
         result = self.method(inst)
-        inst.db.add(result)
+        if isinstance(result, (list, tuple)):
+            inst.db.add_all(result)
+        else:
+            inst.db.add(result)
         inst.used_properties.add(self.name)
         setattr(inst, self.name, result)
         return result

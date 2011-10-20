@@ -417,6 +417,28 @@ class Test(unittest.TestCase):
         self.assert_attr(TestSample, '_decorated_methods',
                          value={'method': TestSample.method.method})
 
+    def test_sample_attr_returns_list(self):
+        class DataSample(Sample):
+            def categories(self):
+                return [Category(name='cat1'),
+                        Category(name='cat2')]
+        sample = DataSample(self.session)
+        sample.create_all()
+        self.assert_attr(sample, 'categories', list)
+        self.assertEqual(set(self.session.query(Category).all()),
+                         set(sample.categories))
+
+    def test_sample_attr_returns_tuple(self):
+        class DataSample(Sample):
+            def categories(self):
+                return (Category(name='cat1'),
+                        Category(name='cat2'))
+        sample = DataSample(self.session)
+        sample.create_all()
+        self.assert_attr(sample, 'categories', tuple)
+        self.assertEqual(set(self.session.query(Category).all()),
+                         set(sample.categories))
+
 
 if __name__ == '__main__':
     unittest.main()
