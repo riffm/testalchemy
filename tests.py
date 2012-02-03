@@ -262,8 +262,6 @@ class Test(unittest.TestCase):
                 pass
         self.assert_attr(TestSample, 'method', sample_property)
         self.assert_attr(TestSample, '_method', types.MethodType)
-        self.assert_attr(TestSample, '_decorated_methods',
-                         value={'method': TestSample.method.method})
 
     def test_sample_properties_with_inheritance(self):
         class BaseTestSample(Sample):
@@ -280,9 +278,6 @@ class Test(unittest.TestCase):
         self.assert_attr(TestSample, 'method1', sample_property)
         self.assert_attr(TestSample, '_method', types.MethodType)
         self.assert_attr(TestSample, '_method1', types.MethodType)
-        self.assert_attr(TestSample, '_decorated_methods',
-                         value={'method': TestSample.method.method,
-                                'method1': TestSample.method1.method})
 
     def test_sample_creation(self):
         class DataSample(Sample):
@@ -404,10 +399,31 @@ class Test(unittest.TestCase):
         self.assert_attr(TestSample, '_method', types.MethodType)
         self.assert_attr(TestSample, '_method1', types.MethodType)
         self.assert_attr(TestSample, '_method2', types.MethodType)
-        self.assert_attr(TestSample, '_decorated_methods',
-                         value={'method': TestSample.method.method,
-                                'method1': TestSample.method1.method,
-                                'method2': TestSample.method2.method})
+
+    def test_sample_with_inheritance_in_mixins(self):
+        class Mixin1(object):
+            def method(self):
+                pass
+            def _method(self):
+                pass
+        class Mixin2(Mixin1):
+            def method1(self):
+                pass
+            def _method1(self):
+                pass
+        class TestSample(Sample, Mixin2):
+            def method2(self):
+                pass
+            def _method2(self):
+                pass
+        self.assert_attr(Mixin1, 'method', types.MethodType)
+        self.assert_attr(Mixin2, 'method1', types.MethodType)
+        self.assert_attr(TestSample, 'method', sample_property)
+        self.assert_attr(TestSample, 'method1', sample_property)
+        self.assert_attr(TestSample, 'method2', sample_property)
+        self.assert_attr(TestSample, '_method', types.MethodType)
+        self.assert_attr(TestSample, '_method1', types.MethodType)
+        self.assert_attr(TestSample, '_method2', types.MethodType)
 
     def test_sample_with_oldstyle_mixin(self):
         class Mixin1(object):
@@ -431,10 +447,6 @@ class Test(unittest.TestCase):
         self.assert_attr(TestSample, '_method', types.MethodType)
         self.assert_attr(TestSample, '_method1', types.MethodType)
         self.assert_attr(TestSample, '_method2', types.MethodType)
-        self.assert_attr(TestSample, '_decorated_methods',
-                         value={'method': TestSample.method.method,
-                                'method1': TestSample.method1.method,
-                                'method2': TestSample.method2.method})
 
     def test_sample_method_overriding(self):
         class BaseTestSample(Sample):
@@ -444,8 +456,6 @@ class Test(unittest.TestCase):
             def category(self):
                 return Category(name='overrided category')
         self.assert_attr(TestSample, 'category', sample_property)
-        self.assert_attr(TestSample, '_decorated_methods',
-                         value={'category': TestSample.category.method})
         sample = TestSample(self.session)
         sample.create_all()
         self.assertEqual(self.session.query(Category).get(1).name,
@@ -462,11 +472,7 @@ class Test(unittest.TestCase):
                 category.name = 'overrided category'
                 return category
         self.assert_attr(BaseTestSample, 'category', sample_property)
-        self.assert_attr(BaseTestSample, '_decorated_methods',
-                         value={'category': BaseTestSample.category.method})
         self.assert_attr(TestSample, 'category', sample_property)
-        self.assert_attr(TestSample, '_decorated_methods',
-                         value={'category': TestSample.category.method})
         sample = TestSample(self.session)
         sample.create_all()
         self.assertEqual(self.session.query(Category).get(1).name,
@@ -480,11 +486,7 @@ class Test(unittest.TestCase):
         class TestSample(Sample):
             method = LibSample.method
         self.assert_attr(LibSample, 'method', sample_property)
-        self.assert_attr(LibSample, '_decorated_methods',
-                         value={'method': LibSample.method.method})
         self.assert_attr(TestSample, 'method', sample_property)
-        self.assert_attr(TestSample, '_decorated_methods',
-                         value={'method': TestSample.method.method})
 
     def test_assigning_class_attr_with_new_name(self):
         class LibSample(Sample):
@@ -493,11 +495,9 @@ class Test(unittest.TestCase):
         class TestSample(Sample):
             method = LibSample.method2
         self.assert_attr(LibSample, 'method2', sample_property)
-        self.assert_attr(LibSample, '_decorated_methods',
-                         value={'method2': LibSample.method2.method})
+        self.assert_attr(LibSample.method2, 'name', value='method2')
         self.assert_attr(TestSample, 'method', sample_property)
-        self.assert_attr(TestSample, '_decorated_methods',
-                         value={'method': TestSample.method.method})
+        self.assert_attr(TestSample.method, 'name', value='method')
 
     def test_sample_attr_returns_list(self):
         class DataSample(Sample):

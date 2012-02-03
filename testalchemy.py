@@ -32,26 +32,19 @@ class sample_property(object):
 class Sample(object):
     class __metaclass__(type):
         def __new__(cls, cls_name, bases, attributes):
-            attributes['_decorated_methods'] = decorated_methods = {}
-            attrs_list = [attributes]
-            for base in bases:
-                if hasattr(base, '_decorated_methods'):
-                    decorated_methods.update(base._decorated_methods)
+            self = type.__new__(cls, cls_name, bases, attributes)
+            for name in dir(self):
+                if name.startswith('_') or name == 'create_all':
+                    continue
+                value = getattr(self, name)
+                if isinstance(value, types.MethodType):
+                    new_value = value.im_func
+                elif isinstance(value, sample_property) and name!= value.name:
+                    new_value = value.method
                 else:
-                    attrs_list.insert(0, base.__dict__)
-            for attrs in attrs_list:
-                for attr_name, attr_value in attrs.items():
-                    if attr_name.startswith('_') or attr_name=='create_all':
-                        continue
-                    if isinstance(attr_value, types.FunctionType):
-                        decorated_methods[attr_name] = attr_value
-                        attributes[attr_name] = sample_property(attr_value)
-                    elif isinstance(attr_value, sample_property):
-                        new_value = sample_property(attr_value.method,
-                                                    name=attr_name)
-                        decorated_methods[attr_name] = attr_value.method
-                        attributes[attr_name] = new_value
-            return type.__new__(cls, cls_name, bases, attributes)
+                    continue
+                setattr(self, name, sample_property(new_value, name=name))
+            return self
 
     def __init__(self, db, **kwargs):
         self.db = db
@@ -61,8 +54,7 @@ class Sample(object):
     def create_all(self):
         if self.db.autocommit:
             self.db.begin()
-        for attr_name in self._decorated_methods.keys():
-            getattr(self, attr_name)
+        map(lambda name: getattr(self, name), dir(self))
         self.db.commit()
 
 
