@@ -8,6 +8,7 @@ __all__ = ['Sample', 'Restorable', 'DBHistory']
 
 
 class sample_property(object):
+
     def __init__(self, method, name=None):
         self.method = method
         self.__doc__ = method.__doc__
@@ -30,6 +31,7 @@ class sample_property(object):
 
 
 class Sample(object):
+
     class __metaclass__(type):
         def __new__(cls, cls_name, bases, attributes):
             self = type.__new__(cls, cls_name, bases, attributes)
@@ -39,8 +41,10 @@ class Sample(object):
                 value = getattr(self, name)
                 if isinstance(value, types.MethodType):
                     new_value = value.im_func
+                # already decorated attribute, assigned from another class
                 elif isinstance(value, sample_property) and name!= value.name:
                     new_value = value.method
+                # classmethod, staticmethod and etc
                 else:
                     continue
                 setattr(self, name, sample_property(new_value, name=name))
@@ -59,6 +63,7 @@ class Sample(object):
 
 
 class Restorable(object):
+
     def __init__(self, db, watch=None):
         self.db = db
         self.watch = watch or db
