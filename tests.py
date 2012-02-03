@@ -126,6 +126,17 @@ class Test(unittest.TestCase):
         self.assertEqual(session.query(Role).all(), [])
         self.assertEqual(session.query(Smi).all(), [])
 
+    def test_restorable_with_autocommit(self):
+        # `autocommit` affects the `Session` constructor
+        session = self.Session(autocommit=True)
+        with Restorable(session):
+            # code must call `begin` explitcitly when `autocommit=True`
+            session.begin()
+            smi = Smi(name='newspaper')
+            session.add(smi)
+            session.commit()
+        self.assertEqual(self.session.query(Smi).all(), [])
+
     def test_models_history_init(self):
         with DBHistory(self.session) as history:
             self.assertEqual(history.created, set())

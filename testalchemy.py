@@ -79,6 +79,8 @@ class Restorable(object):
         db.expunge_all()
         old_autoflush = db.autoflush
         db.autoflush = False
+        if db.autocommit:
+            db.begin()
         for cls, ident_set in self.history.items():
             for ident in ident_set:
                 instance = db.query(cls).get(ident)
