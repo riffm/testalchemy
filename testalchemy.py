@@ -59,6 +59,8 @@ class Sample(object):
         self.__dict__.update(kwargs)
 
     def create_all(self):
+        if self.db.autocommit:
+            self.db.begin()
         for attr_name in self._decorated_methods.keys():
             getattr(self, attr_name)
         self.db.commit()

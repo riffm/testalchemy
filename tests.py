@@ -306,6 +306,28 @@ class Test(unittest.TestCase):
         self.assertEqual(session.query(Role).all(), [sample.newspaper_editor])
         self.assertEqual(session.query(Smi).all(), [sample.newspaper])
 
+    def test_sample_creation_with_autocommit(self):
+        session = self.Session(autocommit=True)
+        class DataSample(Sample):
+            def john(self):
+                return User(name='john')
+            def cat1(self):
+                return Category(name='cat1')
+            def cat2(self):
+                return Category(name='cat2')
+            def newspaper_editor(self):
+                return Role(user=self.john, smi=self.newspaper,
+                            categories=[self.cat1, self.cat2])
+            def newspaper(self):
+                return Smi(name='newspaper')
+        sample = DataSample(session)
+        sample.create_all()
+        self.assertEqual(session.query(User).all(), [sample.john])
+        self.assertEqual(set(session.query(Category).all()),
+                         set([sample.cat1, sample.cat2]))
+        self.assertEqual(session.query(Role).all(), [sample.newspaper_editor])
+        self.assertEqual(session.query(Smi).all(), [sample.newspaper])
+
     def test_sample_creation_with_mixins(self):
         class SampleCat(Sample):
             def cat1(self):
