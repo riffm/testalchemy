@@ -2,7 +2,7 @@
 
 import types
 from sqlalchemy import event
-from sqlalchemy.orm import util, Session
+from sqlalchemy.orm import util, Session, ScopedSession
 
 __all__ = ['Sample', 'Restorable', 'DBHistory']
 
@@ -103,8 +103,12 @@ class Restorable(object):
 class DBHistory(object):
 
     def __init__(self, session):
-        assert isinstance(session, Session)
+        assert isinstance(session, (Session, ScopedSession))
         self.session = session
+        #XXX: It is not clear do we need events on class or object
+        self._target = session
+        if isinstance(session, ScopedSession):
+            self._target = session.registry()
         self.created = set()
         self.deleted = set()
         self.updated = set()
@@ -182,12 +186,11 @@ class DBHistory(object):
         self.deleted_idents = {}
 
     def __enter__(self):
-        event.listen(self.session.__class__, 'after_flush', self._after_flush)
+        event.listen(self._target, 'after_flush', self._after_flush)
         return self
 
     def __exit__(self, type, value, traceback):
-        event.Events._remove(self.session.__class__, 'after_flush',
-                             self._after_flush)
+        event.Events._remove(self._target, 'after_flush', self._after_flush)
 
     def _populate_idents_dict(self, idents, objects):
         for obj in objects:

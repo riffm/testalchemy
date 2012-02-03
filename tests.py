@@ -175,6 +175,31 @@ class Test(unittest.TestCase):
             self.assertRaises(AssertionError, history.assert_deleted, User)
             self.assertRaises(AssertionError, history.assert_deleted_one, User)
 
+    def test_models_history_created_with_scoped_session(self):
+        engine = create_engine('sqlite:///:memory:', echo=False)
+        metadata.create_all(engine)
+        session = scoped_session(sessionmaker(bind=engine))
+        with DBHistory(session) as history:
+            user = User(name='test')
+            session.add(user)
+            session.commit()
+            self.assertEqual(history.created, set([user]))
+            self.assertEqual(history.updated, set())
+            self.assertEqual(history.deleted, set())
+            self.assertEqual(history.created_idents, {User: set([(1,)])})
+            self.assertEqual(history.updated_idents, {})
+            self.assertEqual(history.deleted_idents, {})
+            self.assertEqual(history.last_created(User), set([user]))
+            self.assertEqual(history.last_updated(User), set())
+            self.assertEqual(history.last_deleted(User), set())
+            self.assertEqual(history.assert_created(User), set([user]))
+            self.assertEqual(history.assert_created(User, user.id), user)
+            self.assertEqual(history.assert_created_one(User), user)
+            self.assertRaises(AssertionError, history.assert_updated, User)
+            self.assertRaises(AssertionError, history.assert_updated_one, User)
+            self.assertRaises(AssertionError, history.assert_deleted, User)
+            self.assertRaises(AssertionError, history.assert_deleted_one, User)
+
     def test_models_history_updated(self):
         session = self.session
         user = User(name='test')
