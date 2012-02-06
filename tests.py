@@ -137,6 +137,19 @@ class Test(unittest.TestCase):
             session.commit()
         self.assertEqual(self.session.query(Smi).all(), [])
 
+    def test_restorable_with_scoped_session_and_autocommit(self):
+        # `autocommit` affects the `Session` constructor
+        engine = create_engine('sqlite:///:memory:', echo=False)
+        metadata.create_all(engine)
+        session = scoped_session(sessionmaker(bind=engine, autocommit=True))
+        with Restorable(session):
+            # code must call `begin` explitcitly when `autocommit=True`
+            session.begin()
+            smi = Smi(name='newspaper')
+            session.add(smi)
+            session.commit()
+        self.assertEqual(self.session.query(Smi).all(), [])
+
     def test_models_history_init(self):
         with DBHistory(self.session) as history:
             self.assertEqual(history.created, set())

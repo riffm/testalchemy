@@ -51,9 +51,9 @@ class Sample(object):
             return self
 
     def __init__(self, db, **kwargs):
-        self.db = db
         if isinstance(db, ScopedSession):
-            self.db = db.registry()
+            db = db.registry()
+        self.db = db
         self.used_properties = set()
         self.__dict__.update(kwargs)
 
@@ -67,6 +67,8 @@ class Sample(object):
 class Restorable(object):
 
     def __init__(self, db, watch=None):
+        if isinstance(db, ScopedSession):
+            db = db.registry()
         self.db = db
         self.watch = watch or db
         self.history = {}
