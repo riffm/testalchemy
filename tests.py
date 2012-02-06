@@ -63,6 +63,11 @@ class Test(unittest.TestCase):
         self.Session = sessionmaker(bind=engine)
         self.session = self.Session()
 
+    def scoped_session(self, **kwargs):
+        engine = create_engine('sqlite:///:memory:', echo=False)
+        metadata.create_all(engine)
+        return scoped_session(sessionmaker(bind=engine, **kwargs))
+
     def tearDown(self):
         self.session.close()
 
@@ -139,9 +144,7 @@ class Test(unittest.TestCase):
 
     def test_restorable_with_scoped_session_and_autocommit(self):
         # `autocommit` affects the `Session` constructor
-        engine = create_engine('sqlite:///:memory:', echo=False)
-        metadata.create_all(engine)
-        session = scoped_session(sessionmaker(bind=engine, autocommit=True))
+        session = self.scoped_session(autocommit=True)
         with Restorable(session):
             # code must call `begin` explitcitly when `autocommit=True`
             session.begin()
@@ -189,9 +192,7 @@ class Test(unittest.TestCase):
             self.assertRaises(AssertionError, history.assert_deleted_one, User)
 
     def test_models_history_created_with_scoped_session(self):
-        engine = create_engine('sqlite:///:memory:', echo=False)
-        metadata.create_all(engine)
-        session = scoped_session(sessionmaker(bind=engine))
+        session = self.scoped_session()
         with DBHistory(session) as history:
             user = User(name='test')
             session.add(user)
@@ -316,9 +317,7 @@ class Test(unittest.TestCase):
                          [sample.newspaper])
 
     def test_sample_creation_with_scoped_session(self):
-        engine = create_engine('sqlite:///:memory:', echo=False)
-        metadata.create_all(engine)
-        session = scoped_session(sessionmaker(bind=engine))()
+        session = self.scoped_session()
         class DataSample(Sample):
             def john(self):
                 return User(name='john')
@@ -362,9 +361,7 @@ class Test(unittest.TestCase):
         self.assertEqual(session.query(Smi).all(), [sample.newspaper])
 
     def test_sample_creation_using_scopedsession_with_autocommit(self):
-        engine = create_engine('sqlite:///:memory:', echo=False)
-        metadata.create_all(engine)
-        session = scoped_session(sessionmaker(bind=engine, autocommit=True))
+        session = self.scoped_session(autocommit=True)
         class DataSample(Sample):
             def john(self):
                 return User(name='john')
