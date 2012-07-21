@@ -6,6 +6,8 @@
 *.egg-info
 *.db
 *.orig
+.idea
+.tox
 dist
 venv
 build
