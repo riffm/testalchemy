@@ -9,7 +9,7 @@ testalchemy - A set of utility classes for testing code that uses sqlalchemy
 ```
    $ git clone git://github.com/riffm/testalchemy.git
    $ cd testalchemy
-   $ python setup.py install
+   $ [sudo] python setup.py install
 ```
 
 
@@ -22,10 +22,11 @@ Python 2.6+
 Run tests
 
 ```
-    $ python setup.py test
+$ python setup.py test
 
-    # or with tox
-    $ tox
+# or with tox
+
+$ tox
 ```
 
 
@@ -37,12 +38,12 @@ Run tests
 ...     user = User(name='john')
 ...     session.add(user)
 ...     session.commit()
-...     print session.query(User).all() <-,
-...                                       |
-...                                       |
-[<__main__.User object at 0x10d489fd0>] # patched session
+...     print session.query(User).all() 
+...
+...
+[<__main__.User object at 0x10d489fd0>] 
 >>> print session.query(User).all()
-[]  # original session
+[]
 ```
 
 ###testalchemy.Sample
@@ -75,17 +76,7 @@ Run tests
 ...     user = User(name='test')
 ...     session.add(user)
 ...     session.commit()
-...     print history.__dict__
+...     assert history.last_created(User) == set([user])
 ...
 ...
-{
- 'updated': set([]),
- 'created': set([<__main__.User object at 0x10d4964d0>]),
- 'deleted': set([]),
- '_target': <sqlalchemy.orm.session.SessionMaker object at 0x10ca9bc90>,
- 'created_idents': {<class '__main__.User'>: set([(2,)])},
- 'session': <sqlalchemy.orm.session.SessionMaker object at 0x10ca9bc90>,
- 'deleted_idents': {},
- 'updated_idents': {}
-}
 ```
