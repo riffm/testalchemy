@@ -113,6 +113,9 @@ class DBHistory(object):
         self.created = set()
         self.deleted = set()
         self.updated = set()
+        self._created = set()
+        self._deleted = set()
+        self._updated = set()
         self.created_idents = {}
         self.updated_idents = {}
         self.deleted_idents = {}
@@ -185,13 +188,26 @@ class DBHistory(object):
         self.created_idents = {}
         self.updated_idents = {}
         self.deleted_idents = {}
+        self.clear_cache()
+
+    def clear_cache(self):
+        self._created = set()
+        self._updated = set()
+        self._deleted = set()
 
     def __enter__(self):
         event.listen(self._target, 'after_flush', self._after_flush)
+        event.listen(self._target, 'after_commit', self._after_commit)
+        event.listen(self._target, 'after_soft_rollback', self._after_rollback)
+        self.clear_cache()
         return self
 
     def __exit__(self, type, value, traceback):
         event.Events._remove(self._target, 'after_flush', self._after_flush)
+        event.Events._remove(self._target, 'after_commit', self._after_commit)
+        event.Events._remove(self._target, 'after_soft_rollback',
+                             self._after_rollback)
+        self.clear_cache()
 
     def _populate_idents_dict(self, idents, objects):
         for obj in objects:
@@ -201,9 +217,22 @@ class DBHistory(object):
     def _after_flush(self, db, flush_context, instances=None):
         def identityset_to_set(obj):
             return set(obj._members.values())
-        self.created = self.created.union(identityset_to_set(db.new))
-        self.updated = self.updated.union(identityset_to_set(db.dirty))
-        self.deleted = self.deleted.union(identityset_to_set(db.deleted))
+        self._created = self._created.union(identityset_to_set(db.new))
+        self._updated = self._updated.union(identityset_to_set(db.dirty))
+        self._deleted = self._deleted.union(identityset_to_set(db.deleted))
+
+    def _after_commit(self, db):
+        if db.transaction.nested:
+            #NOTE: `after_commit` is called within `_flush` for nested
+            #      transactions and this is unexpected behavior
+            return
+        self.created = self.created.union(self._created)
+        self.updated = self.updated.union(self._updated)
+        self.deleted = self.deleted.union(self._deleted)
         self._populate_idents_dict(self.created_idents, self.created)
         self._populate_idents_dict(self.updated_idents, self.updated)
         self._populate_idents_dict(self.deleted_idents, self.deleted)
+        self.clear_cache()
+
+    def _after_rollback(self, db, prev_tx):
+        self.clear_cache()

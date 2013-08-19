@@ -268,6 +268,25 @@ class Test(unittest.TestCase):
             self.assertEqual(history.assert_deleted(User, user.id), user)
             self.assertEqual(history.assert_deleted_one(User), user)
 
+    def test_models_history_with_manual_flush_and_rollback(self):
+        session = self.session
+        class SomeException(Exception): pass
+        user = User(name='test')
+        session.add(user)
+        session.commit()
+        try:
+            with DBHistory(session) as history:
+                session.add(User(name='test1'))
+                session.delete(user)
+                session.flush()
+                session.add(User(name='test2'))
+                raise SomeException()
+        except SomeException:
+            pass
+        self.assertFalse(history.created)
+        self.assertFalse(history.updated)
+        self.assertFalse(history.deleted)
+
     def test_sample_properties(self):
         class TestSample(Sample):
             def method(self):
