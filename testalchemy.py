@@ -2,7 +2,11 @@
 
 import types
 from sqlalchemy import event
-from sqlalchemy.orm import util, Session, ScopedSession
+from sqlalchemy.orm import util, Session
+try:
+    from sqlalchemy.orm import ScopedSession
+except ImportError:
+    from sqlalchemy.orm.scoping import scoped_session as ScopedSession
 
 __all__ = ['Sample', 'Restorable', 'DBHistory']
 
