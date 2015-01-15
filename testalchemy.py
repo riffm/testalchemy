@@ -114,9 +114,6 @@ class DBHistory(object):
         self._target = session
         if isinstance(session, ScopedSession):
             self._target = session.registry()
-        self.created = set()
-        self.deleted = set()
-        self.updated = set()
         self._created = set()
         self._deleted = set()
         self._updated = set()
@@ -126,41 +123,50 @@ class DBHistory(object):
 
     def last(self, model_cls, mode):
         assert mode in ('created', 'updated', 'deleted')
-        if mode == 'deleted':
-            # Because there is not data in DB we return detached object set.
-            return set([inst for inst in self.deleted \
-                        if isinstance(inst, model_cls)])
-        idents = getattr(self, '%s_idents' % mode).get(model_cls, set())
-        return set([self.session.query(model_cls).get(ident) \
-                    for ident in idents])
+        return getattr(self, '%s_idents' % mode).get(model_cls, set())
+
+    def _idents_to_objects_set(self, idents, model_cls):
+        q = self.session.query
+        return set([
+            q(model_cls).get(ident) for ident in idents
+        ])
 
     def last_created(self, model_cls):
-        return self.last(model_cls, 'created')
+        return self._idents_to_objects_set(
+            self.last(model_cls, 'created'),
+            model_cls
+        )
 
     def last_updated(self, model_cls):
-        return self.last(model_cls, 'updated')
+        return self._idents_to_objects_set(
+            self.last(model_cls, 'updated'),
+            model_cls
+        )
 
     def last_deleted(self, model_cls):
         return self.last(model_cls, 'deleted')
 
     def assert_(self, model_cls, ident=None, mode='created'):
-        dataset = self.last(model_cls, mode)
+        idents = self.last(model_cls, mode)
         error_msg = 'No instances of %s were %s' % (model_cls, mode)
-        assert dataset, error_msg
+        assert idents, error_msg
         if ident is not None:
-            ident = ident if isinstance(ident, (tuple, list)) else (ident,)
-            item = [i for i in dataset \
-                    if util.identity_key(instance=i)[1] == ident]
-            assert item,'No insatances of %s with identity %r were %s' % \
+            i = ident if isinstance(ident, (tuple, list)) else (ident,)
+            assert i in idents,'No insatances of %s with identity %r were %s' % \
                    (model_cls, ident, mode)
-            return item[0]
-        return dataset
+        return idents
 
     def assert_created(self, model_cls, ident=None):
-        return self.assert_(model_cls, ident, 'created')
+        return self._idents_to_objects_set(
+            self.assert_(model_cls, ident, 'created'),
+            model_cls
+        )
 
     def assert_updated(self, model_cls, ident=None):
-        return self.assert_(model_cls, ident, 'updated')
+        return self._idents_to_objects_set(
+            self.assert_(model_cls, ident, 'updated'),
+            model_cls
+        )
 
     def assert_deleted(self, model_cls, ident=None):
         return self.assert_(model_cls, ident, 'deleted')
@@ -185,10 +191,12 @@ class DBHistory(object):
         result = self.assert_updated(model_cls)
         return self.assert_one(result, model_cls, 'updated')
 
+    def assert_nothing_happened(self):
+        assert not self.created_idents, 'Something is created'
+        assert not self.updated_idents, 'Something is updated'
+        assert not self.deleted_idents, 'Something is deleted'
+
     def clear(self):
-        self.created = set()
-        self.deleted = set()
-        self.updated = set()
         self.created_idents = {}
         self.updated_idents = {}
         self.deleted_idents = {}
@@ -230,12 +238,9 @@ class DBHistory(object):
             #NOTE: `after_commit` is called within `_flush` for nested
             #      transactions and this is unexpected behavior
             return
-        self.created = self.created.union(self._created)
-        self.updated = self.updated.union(self._updated)
-        self.deleted = self.deleted.union(self._deleted)
-        self._populate_idents_dict(self.created_idents, self.created)
-        self._populate_idents_dict(self.updated_idents, self.updated)
-        self._populate_idents_dict(self.deleted_idents, self.deleted)
+        self._populate_idents_dict(self.created_idents, self._created)
+        self._populate_idents_dict(self.updated_idents, self._updated)
+        self._populate_idents_dict(self.deleted_idents, self._deleted)
         self.clear_cache()
 
     def _after_rollback(self, db, prev_tx):
