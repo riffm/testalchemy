@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='testalchemy',
-    version='0.3',
+    version='0.4',
     author='Tim Perevezentsev',
     author_email='riffm2005@gmail.com',
     url='https://github.com/riffm/testalchemy',
