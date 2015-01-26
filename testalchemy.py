@@ -96,8 +96,10 @@ class Restorable(object):
         db.commit()
         db.close()
         db.autoflush = old_autoflush
-        event.Events._remove(self.watch, 'after_flush',
-                             self.after_flush)
+        try:
+            event.remove(self.watch, 'after_flush', self.after_flush)
+        except AttributeError:
+            event.Events._remove(self.watch, 'after_flush', self.after_flush)
 
     def after_flush(self, db, flush_context, instances=None):
         for instance in db.new:
@@ -215,10 +217,18 @@ class DBHistory(object):
         return self
 
     def __exit__(self, type, value, traceback):
-        event.Events._remove(self._target, 'after_flush', self._after_flush)
-        event.Events._remove(self._target, 'after_commit', self._after_commit)
-        event.Events._remove(self._target, 'after_soft_rollback',
-                             self._after_rollback)
+        target = self._target
+        try:
+            # sa==0.9
+            event.remove(target, 'after_flush', self._after_flush)
+            event.remove(target, 'after_commit', self._after_commit)
+            event.remove(target, 'after_soft_rollback', self._after_rollback)
+        except AttributeError:
+            # sa==0.8
+            event.Events._remove(target, 'after_flush', self._after_flush)
+            event.Events._remove(target, 'after_commit', self._after_commit)
+            event.Events._remove(target, 'after_soft_rollback',
+                                 self._after_rollback)
         self.clear_cache()
 
     def _populate_idents_dict(self, idents, objects):
