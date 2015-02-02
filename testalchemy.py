@@ -218,15 +218,16 @@ class DBHistory(object):
     def __enter__(self):
         event.listen(self._target, 'after_flush', self._after_flush)
         event.listen(self._target, 'after_commit', self._after_commit)
-        event.listen(self._target, 'after_soft_rollback', self._after_rollback)
+        event.listen(self._target, 'after_soft_rollback',
+                     self._after_rollback)
         self.clear_cache()
         return self
 
     def __exit__(self, type, value, traceback):
-        target = self._target
-        remove_event(target, 'after_flush', self._after_flush)
-        remove_event(target, 'after_commit', self._after_commit)
-        remove_event(target, 'after_soft_rollback', self._after_rollback)
+        remove_event(self._target, 'after_flush', self._after_flush)
+        remove_event(self._target, 'after_commit', self._after_commit)
+        remove_event(self._target, 'after_soft_rollback',
+                     self._after_rollback)
         self.clear_cache()
 
     def _populate_idents_dict(self, idents, objects):
