@@ -8,6 +8,14 @@ try:
 except ImportError:
     from sqlalchemy.orm.scoping import scoped_session as ScopedSession
 
+try:
+    # Sqlalchemy >= 0.9
+    remove_event = event.remove
+except AttributeError:
+    # Sqlalchemy < 0.9
+    remove_event = event.Events._remove
+
+
 __all__ = ['Sample', 'Restorable', 'DBHistory']
 
 
@@ -96,8 +104,8 @@ class Restorable(object):
         db.commit()
         db.close()
         db.autoflush = old_autoflush
-        event.Events._remove(self.watch, 'after_flush',
-                             self.after_flush)
+        remove_event(self.watch, 'after_flush', self.after_flush)
+        
 
     def after_flush(self, db, flush_context, instances=None):
         for instance in db.new:
@@ -210,15 +218,16 @@ class DBHistory(object):
     def __enter__(self):
         event.listen(self._target, 'after_flush', self._after_flush)
         event.listen(self._target, 'after_commit', self._after_commit)
-        event.listen(self._target, 'after_soft_rollback', self._after_rollback)
+        event.listen(self._target, 'after_soft_rollback',
+                     self._after_rollback)
         self.clear_cache()
         return self
 
     def __exit__(self, type, value, traceback):
-        event.Events._remove(self._target, 'after_flush', self._after_flush)
-        event.Events._remove(self._target, 'after_commit', self._after_commit)
-        event.Events._remove(self._target, 'after_soft_rollback',
-                             self._after_rollback)
+        remove_event(self._target, 'after_flush', self._after_flush)
+        remove_event(self._target, 'after_commit', self._after_commit)
+        remove_event(self._target, 'after_soft_rollback',
+                     self._after_rollback)
         self.clear_cache()
 
     def _populate_idents_dict(self, idents, objects):
